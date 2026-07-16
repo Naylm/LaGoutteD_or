@@ -1,0 +1,18 @@
+{
+  "short_name": "Goutte d'Or",
+  "name": "La Goutte d'Or - Cocktails",
+  "description": "Recettes de cocktails de La Goutte d'Or",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#100D01",
+  "theme_color": "#100D01",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
