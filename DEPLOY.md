@@ -62,14 +62,31 @@ mkdir -p /opt/lagouttedor/letsencrypt
 
 ## 5. Lancer le déploiement
 
+### Scénario A : Tu n'as pas encore de Traefik sur ce serveur
+
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+Ce fichier déploie Traefik en plus de l'application. Vérifie que les ports 80 et 443 sont libres avant.
+
+### Scénario B : Tu as déjà Traefik qui tourne
+
+Si tu as déjà un Traefik avec le réseau Docker `traefik` en place, utilise plutôt :
+
+```bash
+docker network create traefik  # si le réseau n'existe pas encore
+docker compose -f docker-compose.traefik-existing.yml up -d --build
+```
+
+Cela ne lance **qu'un seul container** (l'application) et s'attache à ton Traefik existant. Aucun conflit de port.
 
 Vérifier les logs :
 
 ```bash
 docker compose -f docker-compose.prod.yml logs -f
+# ou
+# docker compose -f docker-compose.traefik-existing.yml logs -f
 ```
 
 Attendre que Traefik génère le certificat Let's Encrypt (1-2 minutes).

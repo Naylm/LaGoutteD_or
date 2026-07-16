@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  lagouttedor:
+    build: .
+    container_name: lagouttedor-app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - EDITOR_USERNAME=${EDITOR_USERNAME}
+      - EDITOR_PASSWORD=${EDITOR_PASSWORD}
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/server/uploads
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lagouttedor.rule=Host(`lagouttedor.agartha.cc`)"
+      - "traefik.http.routers.lagouttedor.entrypoints=websecure"
+      - "traefik.http.routers.lagouttedor.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lagouttedor.loadbalancer.server.port=3000"
+
+networks:
+  traefik:
+    external: true

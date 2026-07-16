@@ -4,6 +4,8 @@ set -e
 REMOTE="root@88.214.57.137"
 DOMAIN="lagouttedor.agartha.cc"
 DIR="/opt/lagouttedor"
+# COMPOSE_FILE="docker-compose.prod.yml"  # si tu n'as pas de Traefik
+COMPOSE_FILE="docker-compose.traefik-existing.yml"  # si tu as déjà Traefik
 
 echo "Déploiement de La Goutte d'Or sur ${REMOTE}..."
 
@@ -29,7 +31,7 @@ rsync -avz --delete \
 ssh ${REMOTE} "mkdir -p ${DIR}/data ${DIR}/uploads ${DIR}/letsencrypt"
 
 # 4. Construire et démarrer les conteneurs
-ssh ${REMOTE} "cd ${DIR} && docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml up -d --build"
+ssh ${REMOTE} "cd ${DIR} && docker compose -f ${COMPOSE_FILE} down && docker compose -f ${COMPOSE_FILE} up -d --build"
 
 # 5. Afficher les logs
-ssh ${REMOTE} "cd ${DIR} && docker compose -f docker-compose.prod.yml logs --tail=50 -f"
+ssh ${REMOTE} "cd ${DIR} && docker compose -f ${COMPOSE_FILE} logs --tail=50 -f"
