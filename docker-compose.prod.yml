@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=postmaster@agartha.cc"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - traefik
+
+  lagouttedor:
+    build: .
+    container_name: la-goutte-dor
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - EDITOR_USERNAME=${EDITOR_USERNAME}
+      - EDITOR_PASSWORD=${EDITOR_PASSWORD}
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/server/uploads
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lagouttedor.rule=Host(`lagouttedor.agartha.cc`)"
+      - "traefik.http.routers.lagouttedor.entrypoints=websecure"
+      - "traefik.http.routers.lagouttedor.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lagouttedor.loadbalancer.server.port=3000"
+
+networks:
+  traefik:

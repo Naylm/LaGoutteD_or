@@ -26,29 +26,54 @@ Le serveur est sur http://localhost:3001 et sert le frontend buildé.
 
 ## Production avec Docker
 
-### Hébergement simple
+### Déploiement complet (Traefik + SSL)
+
+Pour déployer sur un serveur Ubuntu avec Docker, voir `DEPLOY.md`.
+
+Résumé rapide :
 
 ```bash
 cp .env.example .env
-# Modifier EDITOR_TOKEN
-docker-compose up -d --build
+# Modifier EDITOR_USERNAME et EDITOR_PASSWORD
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Le site sera accessible sur `https://lagouttedor.agartha.cc`.
+
+### Hébergement simple (local)
+
+```bash
+cp .env.example .env
+# Modifier les identifiants
+docker compose up -d --build
 ```
 
 Le site est accessible sur http://localhost:3000.
 
-### Hébergement derrière Traefik (sous-domaine)
+### Hébergement derrière un Traefik externe
 
 Éditez `docker-compose.traefik.yml`, remplacez `lagouttedor.example.com` par votre sous-domaine, puis :
 
 ```bash
-docker-compose -f docker-compose.traefik.yml up -d --build
+docker compose -f docker-compose.traefik.yml up -d --build
 ```
 
 Assurez-vous d'être dans le réseau `traefik` externe.
 
+## Déploiement automatisé depuis Windows
+
+Le script `deploy.sh` envoie le code sur le serveur et redémarre les conteneurs :
+
+```bash
+# Sous Git Bash / WSL / Ubuntu
+bash deploy.sh
+```
+
+> Nécessite `rsync` et une connexion SSH configurée.
+
 ## Mode éditeur
 
-Accédez à `/editeur/<EDITOR_TOKEN>` pour créer/modifier les cocktails, ingrédients et catégories. Le token par défaut est `dev-token-secret` en développement.
+Accédez à `/editeur` pour créer/modifier les cocktails, ingrédients, catégories et pages. Les identifiants par défaut sont définis dans `.env` (`EDITOR_USERNAME` / `EDITOR_PASSWORD`).
 
 ## Fonctionnalités
 
@@ -56,5 +81,6 @@ Accédez à `/editeur/<EDITOR_TOKEN>` pour créer/modifier les cocktails, ingré
 - Jauge Guinness indiquant la progression du défilement
 - Cartes cocktails tactiles affichant les ingrédients au tap
 - Filtrage par catégories/sous-catégories d'ingrédients
-- Suppression automatique des cocktails non réalisables si un ingrédient manque
+- Gestion des pages, cocktails, ingrédients et catégories via éditeur sécurisé
+- Upload d'images par drag & drop
 - Design mobile-first avec palette personnalisée
