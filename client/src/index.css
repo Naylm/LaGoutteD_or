@@ -91,3 +91,43 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(244, 217, 146, 0.2) transparent;
 }
+
+/* Styles d'impression pour le livre de recettes */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  header,
+  .fixed,
+  button {
+    display: none !important;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .recipe-book {
+    display: block !important;
+  }
+
+  .recipe-book section {
+    page-break-before: always;
+    padding: 2cm;
+  }
+
+  .recipe-book h2,
+  .recipe-book h3,
+  .recipe-book h4,
+  .recipe-book p,
+  .recipe-book li {
+    color: black !important;
+  }
+
+  .recipe-book img {
+    display: none !important;
+  }
+}

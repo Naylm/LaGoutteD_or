@@ -6,12 +6,14 @@ import CocktailForm from '../components/editor/CocktailForm';
 import IngredientForm from '../components/editor/IngredientForm';
 import CategoryManager from '../components/editor/CategoryManager';
 import PageManager from '../components/editor/PageManager';
+import RecipeBook from '../components/editor/RecipeBook';
 
 const tabs = [
   { id: 'cocktails', label: 'Cocktails' },
   { id: 'ingredients', label: 'Ingrédients' },
   { id: 'categories', label: 'Catégories' },
-  { id: 'pages', label: 'Pages' }
+  { id: 'pages', label: 'Pages' },
+  { id: 'recipebook', label: 'Livre' }
 ];
 
 export default function Editor() {
@@ -127,6 +129,7 @@ export default function Editor() {
         {activeTab === 'ingredients' && <IngredientForm auth={auth} />}
         {activeTab === 'categories' && <CategoryManager auth={auth} />}
         {activeTab === 'pages' && <PageManager auth={auth} />}
+        {activeTab === 'recipebook' && <RecipeBook />}
       </main>
 
       <div className="fixed bottom-4 right-4 flex gap-2">
