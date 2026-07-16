@@ -1,0 +1,29 @@
+# Dépendances
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+client/dist/
+dist/
+
+# Environnement local
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Uploads (fichiers générés)
+server/uploads/*
+!server/uploads/.gitkeep

@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  lagouttedor:
+    build: .
+    container_name: la-goutte-dor
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - EDITOR_TOKEN=change-me-in-production
+      - DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lagouttedor.rule=Host(`lagouttedor.example.com`)"
+      - "traefik.http.routers.lagouttedor.entrypoints=websecure"
+      - "traefik.http.routers.lagouttedor.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lagouttedor.loadbalancer.server.port=3000"
+
+networks:
+  traefik:
+    external: true
