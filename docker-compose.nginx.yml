@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  lagouttedor:
+    build: .
+    container_name: lagouttedor-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - EDITOR_USERNAME=${EDITOR_USERNAME}
+      - EDITOR_PASSWORD=${EDITOR_PASSWORD}
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/server/uploads

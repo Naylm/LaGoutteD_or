@@ -5,7 +5,7 @@ REMOTE="root@88.214.57.137"
 DOMAIN="lagouttedor.agartha.cc"
 DIR="/opt/lagouttedor"
 # COMPOSE_FILE="docker-compose.prod.yml"  # si tu n'as pas de Traefik
-COMPOSE_FILE="docker-compose.traefik-existing.yml"  # si tu as déjà Traefik
+COMPOSE_FILE="docker-compose.nginx.yml"  # si tu as déjà Nginx
 
 echo "Déploiement de La Goutte d'Or sur ${REMOTE}..."
 

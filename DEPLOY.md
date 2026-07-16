@@ -81,12 +81,33 @@ docker compose -f docker-compose.traefik-existing.yml up -d --build
 
 Cela ne lance **qu'un seul container** (l'application) et s'attache à ton Traefik existant. Aucun conflit de port.
 
+### Scénario C : Tu as Nginx qui tourne
+
+Lance uniquement l'application sur le port local `3000` :
+
+```bash
+docker compose -f docker-compose.nginx.yml up -d --build
+```
+
+Puis ajoute la config Nginx fournie dans `nginx-lagouttedor.conf` à ton serveur :
+
+```bash
+cp nginx-lagouttedor.conf /etc/nginx/sites-available/lagouttedor.agartha.cc
+ln -s /etc/nginx/sites-available/lagouttedor.agartha.cc /etc/nginx/sites-enabled/
+nginx -t
+systemctl reload nginx
+```
+
+> Assure-toi d'avoir un certificat SSL pour `lagouttedor.agartha.cc` (par exemple avec Certbot) et adapte les chemins dans la config Nginx.
+
 Vérifier les logs :
 
 ```bash
 docker compose -f docker-compose.prod.yml logs -f
 # ou
 # docker compose -f docker-compose.traefik-existing.yml logs -f
+# ou
+# docker compose -f docker-compose.nginx.yml logs -f
 ```
 
 Attendre que Traefik génère le certificat Let's Encrypt (1-2 minutes).
