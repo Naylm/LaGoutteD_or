@@ -83,22 +83,35 @@ Cela ne lance **qu'un seul container** (l'application) et s'attache à ton Traef
 
 ### Scénario C : Tu as Nginx qui tourne
 
-Lance uniquement l'application sur le port local `3000` :
+Par défaut l'application écoute en local sur `127.0.0.1:3050`. Si ce port est déjà pris, modifie `APP_PORT` dans `.env` ou change directement le port dans `docker-compose.nginx.yml` et `nginx-lagouttedor-pre-ssl.conf` / `nginx-lagouttedor.conf`.
+
+Lance uniquement l'application :
 
 ```bash
 docker compose -f docker-compose.nginx.yml up -d --build
 ```
 
-Puis ajoute la config Nginx fournie dans `nginx-lagouttedor.conf` à ton serveur :
+Ajoute d'abord la config Nginx sans SSL (HTTP) pour que Certbot puisse vérifier le domaine :
 
 ```bash
-cp nginx-lagouttedor.conf /etc/nginx/sites-available/lagouttedor.agartha.cc
-ln -s /etc/nginx/sites-available/lagouttedor.agartha.cc /etc/nginx/sites-enabled/
-nginx -t
-systemctl reload nginx
+sudo cp nginx-lagouttedor-pre-ssl.conf /etc/nginx/sites-available/lagouttedor.agartha.cc
+sudo ln -sf /etc/nginx/sites-available/lagouttedor.agartha.cc /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-> Assure-toi d'avoir un certificat SSL pour `lagouttedor.agartha.cc` (par exemple avec Certbot) et adapte les chemins dans la config Nginx.
+Génère le certificat SSL avec Certbot :
+
+```bash
+sudo certbot --nginx -d lagouttedor.agartha.cc
+```
+
+Certbot modifiera automatiquement la config Nginx pour activer HTTPS. Après, recharge Nginx :
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 Vérifier les logs :
 
