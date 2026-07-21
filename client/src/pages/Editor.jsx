@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { login, getVapidPublicKey, subscribePush } from '../api';
+import { unlockAudio } from '../utils/sound';
 import CocktailForm from '../components/editor/CocktailForm';
 import IngredientForm from '../components/editor/IngredientForm';
 import CategoryManager from '../components/editor/CategoryManager';
@@ -37,6 +38,13 @@ export default function Editor() {
   useEffect(() => {
     if (!isLoggedIn) return;
     setupPushNotifications();
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    return () => window.removeEventListener('pointerdown', unlock);
   }, [isLoggedIn]);
 
   const setupPushNotifications = async () => {

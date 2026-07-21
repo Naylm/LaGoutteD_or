@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getOrders, updateOrderStatus, deleteOrder } from '../../api';
+import { playPop } from '../../utils/sound';
 
 const POLL_INTERVAL = 10000;
 
@@ -7,10 +8,19 @@ export default function OrderList({ auth }) {
   const [orders, setOrders] = useState([]);
   const [message, setMessage] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const seenIds = useRef(new Set());
+  const firstLoad = useRef(true);
 
   const load = useCallback(async () => {
     try {
       const data = await getOrders(auth);
+      const pendingIds = data.filter(o => o.status === 'pending').map(o => o.id);
+      if (!firstLoad.current) {
+        const hasNew = pendingIds.some(id => !seenIds.current.has(id));
+        if (hasNew) playPop();
+      }
+      pendingIds.forEach(id => seenIds.current.add(id));
+      firstLoad.current = false;
       setOrders(data);
     } catch (err) {
       setMessage(err.message);
@@ -21,6 +31,18 @@ export default function OrderList({ auth }) {
     load();
     const interval = setInterval(load, POLL_INTERVAL);
     return () => clearInterval(interval);
+  }, [load]);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const handler = (event) => {
+      if (event.data && event.data.type === 'lgo-new-order') {
+        playPop();
+        load();
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
   }, [load]);
 
   const markDone = async (id) => {

@@ -23,7 +23,16 @@ self.addEventListener('push', (event) => {
     renotify: true
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+        clientsArr.forEach((client) => {
+          client.postMessage({ type: 'lgo-new-order', title, body: data.body || '' });
+        });
+      })
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
