@@ -10,8 +10,17 @@ function getContext() {
 
 export function unlockAudio() {
   const ctx = getContext();
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch(() => {});
+  const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+  resumePromise.catch(() => {});
+
+  try {
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch (err) {
+    console.error('Erreur deverrouillage audio:', err);
   }
 }
 

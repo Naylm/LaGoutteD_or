@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { login, getVapidPublicKey, subscribePush } from '../api';
-import { unlockAudio } from '../utils/sound';
+import { login, getVapidPublicKey, subscribePush, getOrders } from '../api';
+import { unlockAudio, playPop } from '../utils/sound';
 import CocktailForm from '../components/editor/CocktailForm';
 import IngredientForm from '../components/editor/IngredientForm';
 import CategoryManager from '../components/editor/CategoryManager';
@@ -19,6 +19,8 @@ const tabs = [
   { id: 'recipebook', label: 'Livre' }
 ];
 
+const ORDERS_POLL_INTERVAL = 4000;
+
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -34,6 +36,46 @@ export default function Editor() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [notifStatus, setNotifStatus] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [ordersMessage, setOrdersMessage] = useState('');
+  const seenOrderIds = useRef(new Set());
+  const firstOrdersLoad = useRef(true);
+
+  const loadOrders = useCallback(async () => {
+    if (!auth) return;
+    try {
+      const data = await getOrders(auth);
+      const pendingIds = data.filter(o => o.status === 'pending').map(o => o.id);
+      if (!firstOrdersLoad.current) {
+        const hasNew = pendingIds.some(id => !seenOrderIds.current.has(id));
+        if (hasNew) playPop();
+      }
+      pendingIds.forEach(id => seenOrderIds.current.add(id));
+      firstOrdersLoad.current = false;
+      setOrders(data);
+    } catch (err) {
+      setOrdersMessage(err.message);
+    }
+  }, [auth]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    loadOrders();
+    const interval = setInterval(loadOrders, ORDERS_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, loadOrders]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !('serviceWorker' in navigator)) return;
+    const handler = (event) => {
+      if (event.data && event.data.type === 'lgo-new-order') {
+        playPop();
+        loadOrders();
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, [isLoggedIn, loadOrders]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -163,19 +205,29 @@ export default function Editor() {
           </div>
           <div className="flex items-center gap-2">
             <nav className="flex gap-2 overflow-x-auto hide-scrollbar">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`shrink-0 px-4 py-2 rounded-full text-sm border transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-lgo-card text-lgo-gold-light border-lgo-border'
-                      : 'bg-transparent text-lgo-gold-light/70 border-lgo-border/50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              {tabs.map(tab => {
+                const pendingCount = tab.id === 'orders'
+                  ? orders.filter(o => o.status === 'pending').length
+                  : 0;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`shrink-0 px-4 py-2 rounded-full text-sm border transition-colors relative ${
+                      activeTab === tab.id
+                        ? 'bg-lgo-card text-lgo-gold-light border-lgo-border'
+                        : 'bg-transparent text-lgo-gold-light/70 border-lgo-border/50'
+                    }`}
+                  >
+                    {tab.label}
+                    {pendingCount > 0 && (
+                      <span className="ml-1.5 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
             <button
               onClick={() => navigate('/')}
@@ -194,7 +246,15 @@ export default function Editor() {
             (bouton Partager → "Sur l'écran d'accueil"), puis rouvrez-le depuis l'icône et autorisez les notifications.
           </div>
         )}
-        {activeTab === 'orders' && <OrderList auth={auth} />}
+        {activeTab === 'orders' && (
+          <OrderList
+            auth={auth}
+            orders={orders}
+            onReload={loadOrders}
+            message={ordersMessage}
+            setMessage={setOrdersMessage}
+          />
+        )}
         {activeTab === 'cocktails' && <CocktailForm auth={auth} />}
         {activeTab === 'ingredients' && <IngredientForm auth={auth} />}
         {activeTab === 'categories' && <CategoryManager auth={auth} />}
