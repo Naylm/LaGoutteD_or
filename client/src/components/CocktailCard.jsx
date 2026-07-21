@@ -53,9 +53,6 @@ export default function CocktailCard({ cocktail }) {
               {sortedIngredients.map(ing => (
                 <li key={ing.id} className="text-[11px] text-lgo-gold-light leading-snug">
                   {ing.name}
-                  {ing.quantity > 0 && (
-                    <span className="text-lgo-gold-light/60 text-[10px]"> {ing.quantity} {ing.unit}</span>
-                  )}
                 </li>
               ))}
             </ul>
