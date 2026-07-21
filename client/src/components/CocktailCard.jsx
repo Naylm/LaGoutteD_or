@@ -5,7 +5,7 @@ export default function CocktailCard({ cocktail }) {
 
   return (
     <div
-      className="cocktail-card-container h-44 cursor-pointer"
+      className="cocktail-card-container h-64 cursor-pointer"
       onClick={() => setFlipped(f => !f)}
       role="button"
       aria-pressed={flipped}
@@ -37,18 +37,21 @@ export default function CocktailCard({ cocktail }) {
 
         {/* Face arrière */}
         <div className="cocktail-card-face cocktail-card-back">
-          <h3 className="font-serif text-base font-bold text-lgo-gold-light leading-tight mb-3">
+          <h3 className="font-serif text-base font-bold text-lgo-gold-light leading-tight mb-2">
             {cocktail.name}
           </h3>
 
-          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-            <h4 className="text-[10px] uppercase tracking-wider text-lgo-gold-dark mb-2">
-              Ingrédients
+          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
+            <h4 className="text-[10px] uppercase tracking-wider text-lgo-gold-dark mb-1">
+              Ingrédients ({cocktail.ingredients.length})
             </h4>
-            <ul className="space-y-1">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
               {cocktail.ingredients.map(ing => (
-                <li key={ing.id} className="text-xs text-lgo-gold-light">
+                <li key={ing.id} className="text-[11px] text-lgo-gold-light leading-snug">
                   {ing.name}
+                  {ing.quantity > 0 && (
+                    <span className="text-lgo-gold-light/60 text-[10px]"> {ing.quantity} {ing.unit}</span>
+                  )}
                 </li>
               ))}
             </ul>

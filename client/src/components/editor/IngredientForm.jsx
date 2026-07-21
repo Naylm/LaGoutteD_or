@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getIngredients, getCategories, createIngredient, updateIngredient, deleteIngredient } from '../../api';
 
 export default function IngredientForm({ auth }) {
@@ -6,6 +6,15 @@ export default function IngredientForm({ auth }) {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ name: '', category_id: '', is_available: true });
   const [message, setMessage] = useState('');
+
+  const matches = useMemo(() => {
+    const term = form.name.trim().toLowerCase();
+    if (!term || term.length < 2) return [];
+    return ingredients.filter(ing =>
+      ing.name.toLowerCase().includes(term) ||
+      term.includes(ing.name.toLowerCase())
+    );
+  }, [form.name, ingredients]);
 
   const load = async () => {
     const [iData, cData] = await Promise.all([getIngredients(), getCategories()]);
@@ -27,8 +36,17 @@ export default function IngredientForm({ auth }) {
     setForm({ name: '', category_id: '', is_available: true });
   };
 
+  const isDuplicate = useMemo(() => {
+    const term = form.name.trim().toLowerCase();
+    return ingredients.some(ing => ing.name.toLowerCase() === term);
+  }, [form.name, ingredients]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isDuplicate) {
+      setMessage(`Un ingrédient nommé "${form.name}" existe déjà.`);
+      return;
+    }
     try {
       const data = { ...form, category_id: parseInt(form.category_id) };
       await createIngredient(data, auth);
@@ -168,13 +186,28 @@ export default function IngredientForm({ auth }) {
         <h3 className="font-serif text-lg text-lgo-gold-light">Nouvel ingrédient</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            required
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            placeholder="Nom"
-            className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-          />
+          <div className="relative">
+            <input
+              required
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              placeholder="Nom"
+              className={`w-full bg-lgo-bg border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40 ${isDuplicate ? 'border-red-500' : 'border-lgo-border'}`}
+            />
+            {matches.length > 0 && (
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-lgo-card border border-lgo-border rounded-lg shadow-lg p-2 max-h-40 overflow-y-auto">
+                <p className="text-[10px] uppercase text-lgo-gold-light/50 mb-1">Correspondances</p>
+                {matches.map(ing => (
+                  <div
+                    key={ing.id}
+                    className={`text-sm px-2 py-1 rounded ${ing.name.toLowerCase() === form.name.trim().toLowerCase() ? 'text-red-400 font-medium' : 'text-lgo-gold-light/80'}`}
+                  >
+                    {ing.name} <span className="text-[10px] text-lgo-gold-light/50">({ing.category_name})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <select
             required

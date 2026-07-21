@@ -17,6 +17,13 @@ router.get('/', async (req, res) => {
 router.post('/', requireEditor, async (req, res) => {
   const { name, category_id, is_available } = req.body;
   try {
+    const existing = await db.get(
+      'SELECT id FROM ingredients WHERE LOWER(name) = LOWER(?)',
+      [name]
+    );
+    if (existing) {
+      return res.status(400).json({ error: `Un ingrédient nommé "${name}" existe déjà.` });
+    }
     const result = await db.run(
       'INSERT INTO ingredients (name, category_id, is_available) VALUES (?, ?, ?)',
       [name, category_id, is_available ? 1 : 0]
@@ -30,6 +37,13 @@ router.post('/', requireEditor, async (req, res) => {
 router.put('/:id', requireEditor, async (req, res) => {
   const { name, category_id, is_available } = req.body;
   try {
+    const existing = await db.get(
+      'SELECT id FROM ingredients WHERE LOWER(name) = LOWER(?) AND id != ?',
+      [name, req.params.id]
+    );
+    if (existing) {
+      return res.status(400).json({ error: `Un ingrédient nommé "${name}" existe déjà.` });
+    }
     await db.run(
       'UPDATE ingredients SET name = ?, category_id = ?, is_available = ? WHERE id = ?',
       [name, category_id, is_available ? 1 : 0, req.params.id]
