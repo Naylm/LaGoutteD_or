@@ -3,6 +3,10 @@ import { useState } from 'react';
 export default function CocktailCard({ cocktail }) {
   const [flipped, setFlipped] = useState(false);
 
+  const sortedIngredients = [...(cocktail.ingredients || [])].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
   return (
     <div
       className="cocktail-card-container h-64 cursor-pointer"
@@ -43,10 +47,10 @@ export default function CocktailCard({ cocktail }) {
 
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
             <h4 className="text-[10px] uppercase tracking-wider text-lgo-gold-dark mb-1">
-              Ingrédients ({cocktail.ingredients.length})
+              Ingrédients ({sortedIngredients.length})
             </h4>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
-              {cocktail.ingredients.map(ing => (
+              {sortedIngredients.map(ing => (
                 <li key={ing.id} className="text-[11px] text-lgo-gold-light leading-snug">
                   {ing.name}
                   {ing.quantity > 0 && (
