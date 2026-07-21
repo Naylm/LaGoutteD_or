@@ -47,7 +47,7 @@ export default function CocktailCard({ cocktail }) {
 
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
             <h4 className="text-[10px] uppercase tracking-wider text-lgo-gold-dark mb-1">
-              Ingrédients ({sortedIngredients.length})
+              Ingrédients
             </h4>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
               {sortedIngredients.map(ing => (
