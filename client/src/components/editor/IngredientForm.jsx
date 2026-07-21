@@ -8,6 +8,7 @@ export default function IngredientForm({ auth }) {
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterAvailability, setFilterAvailability] = useState('');
 
   const filteredIngredients = useMemo(() => {
     let list = [...ingredients];
@@ -18,8 +19,12 @@ export default function IngredientForm({ auth }) {
     if (filterCategory) {
       list = list.filter(ing => String(ing.category_id) === filterCategory || ing.category_name === filterCategory);
     }
+    if (filterAvailability) {
+      const available = filterAvailability === 'available';
+      list = list.filter(ing => !!ing.is_available === available);
+    }
     return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [ingredients, searchTerm, filterCategory]);
+  }, [ingredients, searchTerm, filterCategory, filterAvailability]);
 
   const matches = useMemo(() => {
     const term = form.name.trim().toLowerCase();
@@ -275,6 +280,15 @@ export default function IngredientForm({ auth }) {
                   {'  '.repeat(cat.depth)}{cat.name}
                 </option>
               ))}
+            </select>
+            <select
+              value={filterAvailability}
+              onChange={e => setFilterAvailability(e.target.value)}
+              className="flex-1 sm:flex-none bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light"
+            >
+              <option value="">Toutes les disponibilités</option>
+              <option value="available">Disponible</option>
+              <option value="unavailable">Non disponible</option>
             </select>
           </div>
         </div>
