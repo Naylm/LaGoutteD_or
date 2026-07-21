@@ -13,6 +13,7 @@ client/dist/
 dist/
 
 # Environnement local
+.env
 .env.local
 .env.*.local
 
