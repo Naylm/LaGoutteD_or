@@ -49,3 +49,21 @@ CREATE TABLE IF NOT EXISTS cocktail_pages (
   FOREIGN KEY (cocktail_id) REFERENCES cocktails(id) ON DELETE CASCADE,
   FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  first_name TEXT NOT NULL,
+  cocktail_id INTEGER,
+  cocktail_name TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (cocktail_id) REFERENCES cocktails(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL UNIQUE,
+  keys_p256dh TEXT NOT NULL,
+  keys_auth TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

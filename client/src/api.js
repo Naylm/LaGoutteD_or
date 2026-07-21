@@ -143,6 +143,41 @@ export async function login(username, password) {
   return response.json();
 }
 
+export function createOrder(first_name, cocktail_id) {
+  return fetchJson('/api/orders', {
+    method: 'POST',
+    body: JSON.stringify({ first_name, cocktail_id })
+  });
+}
+
+export function getOrders(auth) {
+  return fetchJson('/api/orders', {}, auth);
+}
+
+export function updateOrderStatus(id, status, auth) {
+  return fetchJson(`/api/orders/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  }, auth);
+}
+
+export function deleteOrder(id, auth) {
+  return fetchJson(`/api/orders/${id}`, {
+    method: 'DELETE'
+  }, auth);
+}
+
+export function getVapidPublicKey() {
+  return fetchJson('/api/push/vapid-public-key');
+}
+
+export function subscribePush(subscription, auth) {
+  return fetchJson('/api/push/subscribe', {
+    method: 'POST',
+    body: JSON.stringify(subscription)
+  }, auth);
+}
+
 export async function uploadImage(file, auth) {
   const body = new FormData();
   body.append('image', file);

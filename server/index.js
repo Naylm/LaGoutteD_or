@@ -18,6 +18,8 @@ import ingredientsRouter from './routes/ingredients.js';
 import categoriesRouter from './routes/categories.js';
 import pagesRouter from './routes/pages.js';
 import uploadsRouter from './routes/uploads.js';
+import ordersRouter from './routes/orders.js';
+import pushRouter from './routes/push.js';
 import { validateLogin } from './middleware/auth.js';
 
 const app = express();
@@ -36,6 +38,8 @@ app.use('/api/ingredients', ingredientsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/pages', pagesRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/api/push', pushRouter);
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};

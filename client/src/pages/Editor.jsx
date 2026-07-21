@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { login } from '../api';
+import { login, getVapidPublicKey, subscribePush } from '../api';
 import CocktailForm from '../components/editor/CocktailForm';
 import IngredientForm from '../components/editor/IngredientForm';
 import CategoryManager from '../components/editor/CategoryManager';
 import PageManager from '../components/editor/PageManager';
 import RecipeBook from '../components/editor/RecipeBook';
+import OrderList from '../components/editor/OrderList';
 
 const tabs = [
+  { id: 'orders', label: 'Commandes' },
   { id: 'cocktails', label: 'Cocktails' },
   { id: 'ingredients', label: 'Ingrédients' },
   { id: 'categories', label: 'Catégories' },
@@ -16,13 +18,58 @@ const tabs = [
   { id: 'recipebook', label: 'Livre' }
 ];
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
 export default function Editor() {
   const navigate = useNavigate();
   const { auth, username, login: doLogin, logout, isLoggedIn } = useAuth();
-  const [activeTab, setActiveTab] = useState('cocktails');
+  const [activeTab, setActiveTab] = useState('orders');
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notifStatus, setNotifStatus] = useState('');
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    setupPushNotifications();
+  }, [isLoggedIn]);
+
+  const setupPushNotifications = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setNotifStatus('unsupported');
+      return;
+    }
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setNotifStatus('denied');
+        return;
+      }
+      const { publicKey } = await getVapidPublicKey();
+      if (!publicKey) {
+        setNotifStatus('no-key');
+        return;
+      }
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
+      await subscribePush(subscription.toJSON(), auth);
+      setNotifStatus('active');
+    } catch (err) {
+      console.error('Push setup error:', err);
+      setNotifStatus('error');
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -125,6 +172,13 @@ export default function Editor() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {(notifStatus === 'denied' || notifStatus === 'unsupported') && (
+          <div className="mb-4 p-3 rounded-lg bg-lgo-card border border-lgo-border text-xs text-lgo-gold-light/70">
+            Notifications désactivées. Sur iPhone/iPad : ajoutez ce site à l'écran d'accueil via Safari
+            (bouton Partager → "Sur l'écran d'accueil"), puis rouvrez-le depuis l'icône et autorisez les notifications.
+          </div>
+        )}
+        {activeTab === 'orders' && <OrderList auth={auth} />}
         {activeTab === 'cocktails' && <CocktailForm auth={auth} />}
         {activeTab === 'ingredients' && <IngredientForm auth={auth} />}
         {activeTab === 'categories' && <CategoryManager auth={auth} />}
