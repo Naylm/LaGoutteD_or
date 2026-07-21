@@ -37,6 +37,7 @@ export default function CocktailCard({ cocktail }) {
 
   const handleNameConfirm = (name) => {
     localStorage.setItem(NAME_STORAGE_KEY, name);
+    window.dispatchEvent(new Event('lgo:name-changed'));
     setShowNamePrompt(false);
     sendOrder(name);
   };

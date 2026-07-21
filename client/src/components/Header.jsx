@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { login } from '../api';
 
+const NAME_STORAGE_KEY = 'lgo_first_name';
+
 export default function Header({ pages, activeSlug, onTabClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -10,13 +12,25 @@ export default function Header({ pages, activeSlug, onTabClick }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [firstName, setFirstName] = useState(() => localStorage.getItem(NAME_STORAGE_KEY) || '');
   const navigate = useNavigate();
   const { login: doLogin, isLoggedIn } = useAuth();
+
+  const changeFirstName = () => {
+    localStorage.removeItem(NAME_STORAGE_KEY);
+    setFirstName('');
+  };
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  useEffect(() => {
+    const syncName = () => setFirstName(localStorage.getItem(NAME_STORAGE_KEY) || '');
+    window.addEventListener('lgo:name-changed', syncName);
+    return () => window.removeEventListener('lgo:name-changed', syncName);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -87,6 +101,15 @@ export default function Header({ pages, activeSlug, onTabClick }) {
               </svg>
             </button>
           </div>
+
+          {firstName && (
+            <div className="flex items-center justify-center gap-2 mb-2 text-[11px] text-lgo-gold-light/60">
+              <span>Commandes au nom de <span className="text-lgo-gold-light font-medium">{firstName}</span></span>
+              <button onClick={changeFirstName} className="underline hover:text-lgo-gold-light transition-colors">
+                Changer
+              </button>
+            </div>
+          )}
 
           <nav className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
             {pages.map(page => (

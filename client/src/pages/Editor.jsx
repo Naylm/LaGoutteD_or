@@ -153,21 +153,29 @@ export default function Editor() {
             <span className="text-xs text-lgo-gold-light/50 ml-2">— Éditeur</span>
             <span className="text-xs text-lgo-gold-dark ml-2">({username})</span>
           </div>
-          <nav className="flex gap-2 overflow-x-auto hide-scrollbar">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm border transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-lgo-card text-lgo-gold-light border-lgo-border'
-                    : 'bg-transparent text-lgo-gold-light/70 border-lgo-border/50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          <div className="flex items-center gap-2">
+            <nav className="flex gap-2 overflow-x-auto hide-scrollbar">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`shrink-0 px-4 py-2 rounded-full text-sm border transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-lgo-card text-lgo-gold-light border-lgo-border'
+                      : 'bg-transparent text-lgo-gold-light/70 border-lgo-border/50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+            <button
+              onClick={() => navigate('/')}
+              className="shrink-0 px-4 py-2 rounded-full text-sm border border-lgo-gold-dark/50 bg-lgo-gold-dark/10 text-lgo-gold-light hover:bg-lgo-gold-dark/20 transition-colors whitespace-nowrap"
+            >
+              Voir le site
+            </button>
+          </div>
         </div>
       </header>
 
@@ -187,12 +195,6 @@ export default function Editor() {
       </main>
 
       <div className="fixed bottom-4 right-4 flex gap-2">
-        <button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 rounded-full bg-lgo-card border border-lgo-border text-xs text-lgo-gold-light"
-        >
-          Voir le site
-        </button>
         <button
           onClick={logout}
           className="px-4 py-2 rounded-full bg-lgo-card border border-lgo-border text-xs text-red-400"
