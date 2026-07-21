@@ -6,6 +6,20 @@ export default function IngredientForm({ auth }) {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ name: '', category_id: '', is_available: true });
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  const filteredIngredients = useMemo(() => {
+    let list = [...ingredients];
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      list = list.filter(ing => ing.name.toLowerCase().includes(term));
+    }
+    if (filterCategory) {
+      list = list.filter(ing => String(ing.category_id) === filterCategory || ing.category_name === filterCategory);
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [ingredients, searchTerm, filterCategory]);
 
   const matches = useMemo(() => {
     const term = form.name.trim().toLowerCase();
@@ -239,11 +253,37 @@ export default function IngredientForm({ auth }) {
         </div>
       </form>
 
-      <div className="space-y-2">
-        <h4 className="font-serif text-md text-lgo-gold-light">Ingrédients</h4>
-        {ingredients.map(ing => (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <h4 className="font-serif text-md text-lgo-gold-light">Ingrédients</h4>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Rechercher un ingrédient..."
+              className="flex-1 bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light placeholder:text-lgo-gold-light/40"
+            />
+            <select
+              value={filterCategory}
+              onChange={e => setFilterCategory(e.target.value)}
+              className="flex-1 sm:flex-none bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light"
+            >
+              <option value="">Toutes les catégories</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {'  '.repeat(cat.depth)}{cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {filteredIngredients.map(ing => (
           <IngredientRow key={ing.id} ing={ing} />
         ))}
+        {filteredIngredients.length === 0 && (
+          <p className="text-sm text-lgo-gold-light/50 text-center py-4">Aucun ingrédient trouvé.</p>
+        )}
       </div>
     </div>
   );

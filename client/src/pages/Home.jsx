@@ -2,14 +2,13 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Header from '../components/Header';
 import GuinnessGauge from '../components/GuinnessGauge';
 import CocktailGrid from '../components/CocktailGrid';
-import { getPages, getCocktails, getIngredients } from '../api';
+import { getPages, getCocktails, getCategories } from '../api';
 
 export default function Home() {
   const [pages, setPages] = useState([]);
   const [cocktails, setCocktails] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
-  const [selectedIngredient, setSelectedIngredient] = useState('');
-  const [searchName, setSearchName] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [activeSlug, setActiveSlug] = useState('');
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -19,14 +18,14 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
-        const [pagesData, cocktailsData, ingredientsData] = await Promise.all([
+        const [pagesData, cocktailsData, categoriesData] = await Promise.all([
           getPages(),
           getCocktails(),
-          getIngredients()
+          getCategories()
         ]);
         setPages(pagesData);
         setCocktails(cocktailsData);
-        setIngredients(ingredientsData);
+        setCategories(categoriesData);
         if (pagesData.length > 0 && !activeSlug) setActiveSlug(pagesData[0].slug);
       } catch (e) {
         console.error(e);
@@ -84,14 +83,10 @@ export default function Home() {
     const page = pages.find(p => p.slug === slug);
     if (!page) return [];
     let list = cocktails.filter(c => c.pages.some(p => p.slug === slug));
-    if (selectedIngredient) {
+    if (selectedCategory) {
       list = list.filter(c =>
-        c.ingredients.some(i => String(i.id) === selectedIngredient)
+        c.ingredients.some(i => i.category_name === selectedCategory || String(i.category_id) === selectedCategory)
       );
-    }
-    if (searchName.trim()) {
-      const term = searchName.trim().toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(term));
     }
     return list.sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -115,28 +110,19 @@ export default function Home() {
       <main className="pt-32 pb-32 px-4 max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <h2 className="font-serif text-xl text-lgo-gold-light">Cocktails</h2>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-            <input
-              type="text"
-              value={searchName}
-              onChange={e => setSearchName(e.target.value)}
-              placeholder="Rechercher un cocktail..."
-              className="flex-1 bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-            />
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <label htmlFor="ingredient-filter" className="text-sm text-lgo-gold-light/70 whitespace-nowrap">Ingrédient :</label>
-              <select
-                id="ingredient-filter"
-                value={selectedIngredient}
-                onChange={e => setSelectedIngredient(e.target.value)}
-                className="flex-1 bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light"
-              >
-                <option value="">Tous</option>
-                {[...ingredients].sort((a, b) => a.name.localeCompare(b.name)).map(ing => (
-                  <option key={ing.id} value={String(ing.id)}>{ing.name}</option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <label htmlFor="category-filter" className="text-sm text-lgo-gold-light/70 whitespace-nowrap">Filtrer par catégorie :</label>
+            <select
+              id="category-filter"
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+              className="flex-1 sm:flex-none bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-sm text-lgo-gold-light"
+            >
+              <option value="">Toutes</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
