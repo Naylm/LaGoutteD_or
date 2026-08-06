@@ -36,6 +36,7 @@ export default function IngredientForm({ auth }) {
   }, [form.name, ingredients]);
 
   const load = async () => {
+    const scrollY = window.scrollY;
     const [iData, cData] = await Promise.all([getIngredients(), getCategories()]);
     setIngredients(iData);
     const flatten = [];
@@ -47,6 +48,7 @@ export default function IngredientForm({ auth }) {
     };
     walk(cData);
     setCategories(flatten);
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' })));
   };
 
   useEffect(() => { load(); }, []);

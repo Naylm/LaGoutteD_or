@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getCocktails, getIngredients, getPages, createCocktail, updateCocktail, deleteCocktail, uploadImage } from '../../api';
+import { getCocktails, getIngredients, getPages, createCocktail, updateCocktail, deleteCocktail } from '../../api';
+import ImageDropZone from './ImageDropZone';
 
 const SORTS = [
   { id: 'name', label: 'Nom' },
@@ -119,6 +120,7 @@ export default function CocktailForm({ auth }) {
   const [message, setMessage] = useState('');
 
   const load = async () => {
+    const scrollY = window.scrollY;
     const [cData, iData, pData] = await Promise.all([
       getCocktails('?available=false'),
       getIngredients(),
@@ -127,6 +129,7 @@ export default function CocktailForm({ auth }) {
     setCocktails(cData);
     setIngredients(iData);
     setPages(pData);
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' })));
   };
 
   useEffect(() => { load(); }, []);
@@ -194,8 +197,6 @@ export default function CocktailForm({ auth }) {
       ingredients: [],
       page_id: ''
     });
-    const [uploading, setUploading] = useState(false);
-    const [dragOver, setDragOver] = useState(false);
 
     const startEdit = () => {
       setInlineForm({
@@ -229,32 +230,6 @@ export default function CocktailForm({ auth }) {
           ingredients: [...prev.ingredients, { ingredient_id: ingredientId, quantity: 0, unit: '' }]
         };
       });
-    };
-
-    const handleInlineFile = async (file) => {
-      if (!file || !file.type.startsWith('image/')) {
-        setMessage('Veuillez choisir une image.');
-        return;
-      }
-      setUploading(true);
-      setMessage('');
-      try {
-        const data = await uploadImage(file, auth);
-        setInlineForm(prev => ({ ...prev, image_url: data.url }));
-        setMessage('Image importée.');
-      } catch (err) {
-        setMessage(err.message);
-      } finally {
-        setUploading(false);
-        setDragOver(false);
-      }
-    };
-
-    const handleInlineDrop = (e) => {
-      e.preventDefault();
-      setDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleInlineFile(file);
     };
 
     const handleUpdate = async (e) => {
@@ -308,25 +283,12 @@ export default function CocktailForm({ auth }) {
               />
             </div>
 
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleInlineDrop}
-              className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${
-                dragOver ? 'border-lgo-gold-dark bg-lgo-card/50' : 'border-lgo-border/50'
-              }`}
-            >
-              {uploading ? (
-                <span className="text-sm text-lgo-gold-light/70">Envoi en cours...</span>
-              ) : inlineForm.image_url ? (
-                <div className="flex flex-col items-center gap-2">
-                  <img src={inlineForm.image_url} alt="Aperçu" className="max-h-24 rounded-lg object-cover" />
-                  <span className="text-xs text-lgo-gold-light/60">Image actuelle</span>
-                </div>
-              ) : (
-                <p className="text-sm text-lgo-gold-light/70">Glissez une nouvelle image ici pour la remplacer</p>
-              )}
-            </div>
+            <ImageDropZone
+              imageUrl={inlineForm.image_url}
+              onImageUrl={(url) => setInlineForm(prev => ({ ...prev, image_url: url }))}
+              auth={auth}
+              label="Glissez une nouvelle image ici pour la remplacer"
+            />
 
             <textarea
               value={inlineForm.description}
@@ -413,6 +375,13 @@ export default function CocktailForm({ auth }) {
             className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
           />
         </div>
+
+        <ImageDropZone
+          imageUrl={form.image_url}
+          onImageUrl={(url) => setForm(prev => ({ ...prev, image_url: url }))}
+          auth={auth}
+          label="Glissez une image ici pour le cocktail"
+        />
 
         <div>
           <h4 className="text-sm text-lgo-gold-dark mb-2">Ingrédients</h4>
