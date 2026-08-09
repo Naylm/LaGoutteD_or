@@ -66,15 +66,21 @@ export default function CocktailCard({ cocktail }) {
         <div className={`cocktail-card-inner ${flipped ? 'is-flipped' : ''}`}>
           {/* Face avant */}
           <div className="cocktail-card-face cocktail-card-front">
-            <div className="w-full">
-              <h3 className="font-serif text-base font-bold text-lgo-gold-light leading-tight">
-                {cocktail.name}
-              </h3>
-              <p className="text-lgo-gold-light/70 text-[10px] mt-1 line-clamp-2">
+            <h3 className="font-serif text-base font-bold text-lgo-gold-light leading-tight shrink-0">
+              {cocktail.name}
+            </h3>
+            {cocktail.image_url ? (
+              <img
+                src={cocktail.image_url}
+                alt={cocktail.name}
+                className="w-full flex-1 min-h-0 object-cover rounded-md mt-1.5"
+              />
+            ) : (
+              <p className="text-lgo-gold-light/70 text-[10px] mt-1 line-clamp-3 flex-1">
                 {cocktail.description}
               </p>
-            </div>
-            <div className="mt-auto text-center">
+            )}
+            <div className="mt-1.5 text-center shrink-0">
               <span className="text-[10px] text-lgo-gold-light/50 uppercase tracking-wider">
                 Appuyez pour voir les ingredients
               </span>

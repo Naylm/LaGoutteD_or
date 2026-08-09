@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getCocktails, getIngredients, getPages, createCocktail, updateCocktail, deleteCocktail } from '../../api';
 import ImageDropZone from './ImageDropZone';
+import EditModal from './EditModal';
 
 const SORTS = [
   { id: 'name', label: 'Nom' },
@@ -46,17 +47,17 @@ function IngredientSelector({ ingredients, selected, onToggle, onChange }) {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0">
         {filtered.map(ing => {
           const sel = selected.find(i => i.ingredient_id === ing.id);
           return (
             <div
               key={ing.id}
-              className={`border rounded-lg p-2 transition-colors ${
+              className={`border rounded-lg p-2 min-w-0 overflow-hidden transition-colors ${
                 sel ? 'border-lgo-gold-dark bg-lgo-bg/50' : 'border-lgo-border/50'
               }`}
             >
-              <label className="flex items-center gap-2 text-sm text-lgo-gold-light cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-lgo-gold-light cursor-pointer min-w-0">
                 <input
                   type="checkbox"
                   checked={!!sel}
@@ -67,29 +68,29 @@ function IngredientSelector({ ingredients, selected, onToggle, onChange }) {
                       onToggle(ing.id, false);
                     }
                   }}
-                  className="accent-lgo-gold-dark"
+                  className="accent-lgo-gold-dark shrink-0"
                 />
-                <span className="flex-1">{ing.name}</span>
-                <span className="text-[10px] text-lgo-gold-light/50 uppercase">{ing.category_name}</span>
-                <span className={`text-[10px] ${ing.is_available ? 'text-green-400' : 'text-red-400'}`}>
+                <span className="flex-1 min-w-0 truncate">{ing.name}</span>
+                <span className="text-[10px] text-lgo-gold-light/50 uppercase shrink-0">{ing.category_name}</span>
+                <span className={`text-[10px] shrink-0 ${ing.is_available ? 'text-green-400' : 'text-red-400'}`}>
                   {ing.is_available ? 'dispo' : 'indispo'}
                 </span>
               </label>
               {sel && (
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2 min-w-0">
                   <input
                     type="number"
                     step="0.1"
                     value={sel.quantity}
                     onChange={e => onChange(ing.id, 'quantity', parseFloat(e.target.value))}
                     placeholder="Qté"
-                    className="w-20 bg-lgo-bg border border-lgo-border rounded px-2 py-1 text-xs text-lgo-gold-light"
+                    className="w-16 min-w-0 shrink-0 bg-lgo-bg border border-lgo-border rounded px-2 py-1 text-xs text-lgo-gold-light"
                   />
                   <input
                     value={sel.unit}
                     onChange={e => onChange(ing.id, 'unit', e.target.value)}
                     placeholder="Unité"
-                    className="flex-1 bg-lgo-bg border border-lgo-border rounded px-2 py-1 text-xs text-lgo-gold-light"
+                    className="w-20 min-w-0 shrink-0 bg-lgo-bg border border-lgo-border rounded px-2 py-1 text-xs text-lgo-gold-light"
                   />
                 </div>
               )}
@@ -168,15 +169,15 @@ export default function CocktailForm({ auth }) {
     };
     try {
       await createCocktail(data, auth);
+      await load();
       setMessage('Cocktail créé.');
       resetForm();
-      load();
     } catch (err) {
       setMessage(err.message);
     }
   };
 
-  const remove = async (id) => {
+  const remove = useCallback(async (id) => {
     if (!confirm('Supprimer ce cocktail ?')) return;
     try {
       await deleteCocktail(id, auth);
@@ -185,169 +186,7 @@ export default function CocktailForm({ auth }) {
     } catch (err) {
       setMessage(err.message);
     }
-  };
-
-  const CocktailRow = ({ c }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [inlineForm, setInlineForm] = useState({
-      name: '',
-      description: '',
-      instructions: '',
-      image_url: '',
-      ingredients: [],
-      page_id: ''
-    });
-
-    const startEdit = () => {
-      setInlineForm({
-        name: c.name,
-        description: c.description || '',
-        instructions: c.instructions || '',
-        image_url: c.image_url || '',
-        ingredients: c.ingredients.map(i => ({
-          ingredient_id: i.id,
-          quantity: i.quantity,
-          unit: i.unit
-        })),
-        page_id: c.pages[0]?.id || ''
-      });
-      setIsEditing(true);
-    };
-
-    const handleInlineIngredientChange = (ingredientId, field, value) => {
-      setInlineForm(prev => {
-        const existing = prev.ingredients.find(i => i.ingredient_id === ingredientId);
-        if (existing) {
-          return {
-            ...prev,
-            ingredients: prev.ingredients.map(i =>
-              i.ingredient_id === ingredientId ? { ...i, [field]: value } : i
-            )
-          };
-        }
-        return {
-          ...prev,
-          ingredients: [...prev.ingredients, { ingredient_id: ingredientId, quantity: 0, unit: '' }]
-        };
-      });
-    };
-
-    const handleUpdate = async (e) => {
-      e.preventDefault();
-      const data = {
-        ...inlineForm,
-        page_ids: inlineForm.page_id ? [parseInt(inlineForm.page_id)] : []
-      };
-      try {
-        await updateCocktail(c.id, data, auth);
-        setMessage('Cocktail mis à jour.');
-        setIsEditing(false);
-        load();
-      } catch (err) {
-        setMessage(err.message);
-      }
-    };
-
-    return (
-      <div className="border border-lgo-border rounded-lg p-3 bg-lgo-card/50 space-y-3">
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="text-lgo-gold-light font-medium">{c.name}</span>
-            <span className={`ml-2 text-xs ${c.is_available ? 'text-green-400' : 'text-red-400'}`}>
-              {c.is_available ? 'réalisable' : 'incomplet'}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            {!isEditing && (
-              <button onClick={startEdit} className="text-xs text-lgo-gold-dark underline">Modifier</button>
-            )}
-            <button onClick={() => remove(c.id)} className="text-xs text-red-400 underline">Supprimer</button>
-          </div>
-        </div>
-
-        {isEditing && (
-          <form onSubmit={handleUpdate} className="bg-lgo-bg border border-lgo-gold-dark/30 rounded-xl p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                required
-                value={inlineForm.name}
-                onChange={e => setInlineForm({ ...inlineForm, name: e.target.value })}
-                placeholder="Nom"
-                className="w-full bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
-              />
-              <input
-                value={inlineForm.image_url}
-                onChange={e => setInlineForm({ ...inlineForm, image_url: e.target.value })}
-                placeholder="URL ou chemin de l'image"
-                className="w-full bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
-              />
-            </div>
-
-            <ImageDropZone
-              imageUrl={inlineForm.image_url}
-              onImageUrl={(url) => setInlineForm(prev => ({ ...prev, image_url: url }))}
-              auth={auth}
-              label="Glissez une nouvelle image ici pour la remplacer"
-            />
-
-            <textarea
-              value={inlineForm.description}
-              onChange={e => setInlineForm({ ...inlineForm, description: e.target.value })}
-              placeholder="Description courte"
-              rows={2}
-              className="w-full bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
-            />
-
-            <textarea
-              value={inlineForm.instructions}
-              onChange={e => setInlineForm({ ...inlineForm, instructions: e.target.value })}
-              placeholder="Instructions de préparation"
-              rows={3}
-              className="w-full bg-lgo-card border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
-            />
-
-            <div>
-              <h4 className="text-sm text-lgo-gold-dark mb-2">Ingrédients</h4>
-              <IngredientSelector
-                ingredients={ingredients}
-                selected={inlineForm.ingredients}
-                onToggle={(id, checked) => {
-                  if (checked) handleInlineIngredientChange(id, 'quantity', 0);
-                  else setInlineForm(prev => ({ ...prev, ingredients: prev.ingredients.filter(i => i.ingredient_id !== id) }));
-                }}
-                onChange={handleInlineIngredientChange}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-lgo-gold-dark mb-2">Page</label>
-              <div className="flex flex-col gap-2">
-                {pages.map(page => (
-                  <button
-                    key={page.id}
-                    type="button"
-                    onClick={() => setInlineForm(prev => ({ ...prev, page_id: String(page.id) }))}
-                    className={`text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
-                      inlineForm.page_id === String(page.id)
-                        ? 'bg-lgo-gold-dark text-lgo-bg border-lgo-gold-dark'
-                        : 'bg-lgo-card border-lgo-border text-lgo-gold-light hover:border-lgo-gold-dark/50'
-                    }`}
-                  >
-                    {page.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button type="submit" className="px-3 py-1.5 rounded-lg bg-lgo-gold-dark text-lgo-bg font-semibold text-xs">Mettre à jour</button>
-              <button type="button" onClick={() => setIsEditing(false)} className="px-3 py-1.5 rounded-lg border border-lgo-border text-lgo-gold-light text-xs">Annuler</button>
-            </div>
-          </form>
-        )}
-      </div>
-    );
-  };
+  }, [auth]);
 
   return (
     <div className="space-y-6">
@@ -440,9 +279,182 @@ export default function CocktailForm({ auth }) {
       <div className="space-y-2">
         <h4 className="font-serif text-md text-lgo-gold-light">Cocktails existants</h4>
         {cocktails.map(c => (
-          <CocktailRow key={c.id} c={c} />
+          <CocktailRow
+            key={c.id}
+            cocktail={c}
+            ingredients={ingredients}
+            pages={pages}
+            auth={auth}
+            onUpdated={load}
+            onDeleted={remove}
+            setMessage={setMessage}
+          />
         ))}
       </div>
+    </div>
+  );
+}
+
+function CocktailRow({ cocktail, ingredients, pages, auth, onUpdated, onDeleted, setMessage }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inlineForm, setInlineForm] = useState({
+    name: '',
+    description: '',
+    instructions: '',
+    image_url: '',
+    ingredients: [],
+    page_id: ''
+  });
+
+  const startEdit = () => {
+    setInlineForm({
+      name: cocktail.name,
+      description: cocktail.description || '',
+      instructions: cocktail.instructions || '',
+      image_url: cocktail.image_url || '',
+      ingredients: cocktail.ingredients.map(i => ({
+        ingredient_id: i.id,
+        quantity: i.quantity,
+        unit: i.unit
+      })),
+      page_id: cocktail.pages[0]?.id || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleInlineIngredientChange = (ingredientId, field, value) => {
+    setInlineForm(prev => {
+      const existing = prev.ingredients.find(i => i.ingredient_id === ingredientId);
+      if (existing) {
+        return {
+          ...prev,
+          ingredients: prev.ingredients.map(i =>
+            i.ingredient_id === ingredientId ? { ...i, [field]: value } : i
+          )
+        };
+      }
+      return {
+        ...prev,
+        ingredients: [...prev.ingredients, { ingredient_id: ingredientId, quantity: 0, unit: '' }]
+      };
+    });
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const data = {
+      ...inlineForm,
+      page_ids: inlineForm.page_id ? [parseInt(inlineForm.page_id)] : []
+    };
+    try {
+      await updateCocktail(cocktail.id, data, auth);
+      await onUpdated();
+      setMessage('Cocktail mis à jour.');
+      setIsEditing(false);
+    } catch (err) {
+      setMessage(err.message);
+    }
+  };
+
+  return (
+    <div className="border border-lgo-border rounded-lg p-3 bg-lgo-card/50 space-y-3">
+      <div className="flex justify-between items-center">
+        <div>
+          <span className="text-lgo-gold-light font-medium">{cocktail.name}</span>
+          <span className={`ml-2 text-xs ${cocktail.is_available ? 'text-green-400' : 'text-red-400'}`}>
+            {cocktail.is_available ? 'réalisable' : 'incomplet'}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          {!isEditing && (
+            <button onClick={startEdit} className="text-xs text-lgo-gold-dark underline">Modifier</button>
+          )}
+          <button onClick={() => onDeleted(cocktail.id)} className="text-xs text-red-400 underline">Supprimer</button>
+        </div>
+      </div>
+
+      {isEditing && (
+        <EditModal title={`Modifier « ${cocktail.name} »`} onClose={() => setIsEditing(false)}>
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                required
+                value={inlineForm.name}
+                onChange={e => setInlineForm({ ...inlineForm, name: e.target.value })}
+                placeholder="Nom"
+                className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
+              />
+              <input
+                value={inlineForm.image_url}
+                onChange={e => setInlineForm({ ...inlineForm, image_url: e.target.value })}
+                placeholder="URL ou chemin de l'image"
+                className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
+              />
+            </div>
+
+            <ImageDropZone
+              imageUrl={inlineForm.image_url}
+              onImageUrl={(url) => setInlineForm(prev => ({ ...prev, image_url: url }))}
+              auth={auth}
+              label="Glissez une nouvelle image ici pour la remplacer"
+            />
+
+            <textarea
+              value={inlineForm.description}
+              onChange={e => setInlineForm({ ...inlineForm, description: e.target.value })}
+              placeholder="Description courte"
+              rows={2}
+              className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
+            />
+
+            <textarea
+              value={inlineForm.instructions}
+              onChange={e => setInlineForm({ ...inlineForm, instructions: e.target.value })}
+              placeholder="Instructions de préparation"
+              rows={3}
+              className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light"
+            />
+
+            <div>
+              <h4 className="text-sm text-lgo-gold-dark mb-2">Ingrédients</h4>
+              <IngredientSelector
+                ingredients={ingredients}
+                selected={inlineForm.ingredients}
+                onToggle={(id, checked) => {
+                  if (checked) handleInlineIngredientChange(id, 'quantity', 0);
+                  else setInlineForm(prev => ({ ...prev, ingredients: prev.ingredients.filter(i => i.ingredient_id !== id) }));
+                }}
+                onChange={handleInlineIngredientChange}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-lgo-gold-dark mb-2">Page</label>
+              <div className="flex flex-col gap-2">
+                {pages.map(page => (
+                  <button
+                    key={page.id}
+                    type="button"
+                    onClick={() => setInlineForm(prev => ({ ...prev, page_id: String(page.id) }))}
+                    className={`text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
+                      inlineForm.page_id === String(page.id)
+                        ? 'bg-lgo-gold-dark text-lgo-bg border-lgo-gold-dark'
+                        : 'bg-lgo-bg border-lgo-border text-lgo-gold-light hover:border-lgo-gold-dark/50'
+                    }`}
+                  >
+                    {page.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-lgo-border/50">
+              <button type="submit" className="px-4 py-2 rounded-lg bg-lgo-gold-dark text-lgo-bg font-semibold text-sm">Mettre à jour</button>
+              <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-lg border border-lgo-border text-lgo-gold-light text-sm">Annuler</button>
+            </div>
+          </form>
+        </EditModal>
+      )}
     </div>
   );
 }
