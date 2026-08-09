@@ -110,6 +110,7 @@ export default function CocktailForm({ auth }) {
   const [cocktails, setCocktails] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [pages, setPages] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -172,6 +173,7 @@ export default function CocktailForm({ auth }) {
       await load();
       setMessage('Cocktail créé.');
       resetForm();
+      setShowCreate(false);
     } catch (err) {
       setMessage(err.message);
     }
@@ -196,85 +198,96 @@ export default function CocktailForm({ auth }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-lgo-card border border-lgo-border rounded-xl p-4 space-y-4 transition-all">
-        <h3 className="font-serif text-lg text-lgo-gold-light">Nouveau cocktail</h3>
+      <button
+        type="button"
+        onClick={() => setShowCreate(true)}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-lgo-gold-dark/50 text-lgo-gold-light hover:border-lgo-gold-dark hover:bg-lgo-card/50 transition-colors font-semibold text-sm"
+      >
+        <span className="text-lg leading-none">+</span> Ajouter un cocktail
+      </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            required
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            placeholder="Nom"
-            className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-          />
-          <input
-            value={form.image_url}
-            onChange={e => setForm({ ...form, image_url: e.target.value })}
-            placeholder="URL ou chemin de l'image"
-            className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-          />
-        </div>
+      {showCreate && (
+        <EditModal title="Nouveau cocktail" onClose={() => setShowCreate(false)}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                required
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                placeholder="Nom"
+                className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
+              />
+              <input
+                value={form.image_url}
+                onChange={e => setForm({ ...form, image_url: e.target.value })}
+                placeholder="URL ou chemin de l'image"
+                className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
+              />
+            </div>
 
-        <ImageDropZone
-          imageUrl={form.image_url}
-          onImageUrl={(url) => setForm(prev => ({ ...prev, image_url: url }))}
-          auth={auth}
-          label="Glissez une image ici pour le cocktail"
-        />
+            <ImageDropZone
+              imageUrl={form.image_url}
+              onImageUrl={(url) => setForm(prev => ({ ...prev, image_url: url }))}
+              auth={auth}
+              label="Glissez une image ici pour le cocktail"
+            />
 
-        <div>
-          <h4 className="text-sm text-lgo-gold-dark mb-2">Ingrédients</h4>
-          <IngredientSelector
-            ingredients={ingredients}
-            selected={form.ingredients}
-            onToggle={(id, checked) => {
-              if (checked) handleIngredientChange(id, 'quantity', 0);
-              else setForm(prev => ({ ...prev, ingredients: prev.ingredients.filter(i => i.ingredient_id !== id) }));
-            }}
-            onChange={handleIngredientChange}
-          />
-        </div>
+            <div>
+              <h4 className="text-sm text-lgo-gold-dark mb-2">Ingrédients</h4>
+              <IngredientSelector
+                ingredients={ingredients}
+                selected={form.ingredients}
+                onToggle={(id, checked) => {
+                  if (checked) handleIngredientChange(id, 'quantity', 0);
+                  else setForm(prev => ({ ...prev, ingredients: prev.ingredients.filter(i => i.ingredient_id !== id) }));
+                }}
+                onChange={handleIngredientChange}
+              />
+            </div>
 
-        <textarea
-          value={form.description}
-          onChange={e => setForm({ ...form, description: e.target.value })}
-          placeholder="Description courte"
-          rows={2}
-          className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-        />
+            <textarea
+              value={form.description}
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              placeholder="Description courte"
+              rows={2}
+              className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
+            />
 
-        <textarea
-          value={form.instructions}
-          onChange={e => setForm({ ...form, instructions: e.target.value })}
-          placeholder="Instructions de préparation"
-          rows={3}
-          className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
-        />
+            <textarea
+              value={form.instructions}
+              onChange={e => setForm({ ...form, instructions: e.target.value })}
+              placeholder="Instructions de préparation"
+              rows={3}
+              className="w-full bg-lgo-bg border border-lgo-border rounded-lg px-3 py-2 text-lgo-gold-light placeholder:text-lgo-gold-light/40"
+            />
 
-        <div>
-          <label className="block text-sm text-lgo-gold-dark mb-2">Page</label>
-          <div className="flex flex-col gap-2">
-            {pages.map(page => (
-              <button
-                key={page.id}
-                type="button"
-                onClick={() => setPage(String(page.id))}
-                className={`text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
-                  form.page_id === String(page.id)
-                    ? 'bg-lgo-gold-dark text-lgo-bg border-lgo-gold-dark'
-                    : 'bg-lgo-bg border-lgo-border text-lgo-gold-light hover:border-lgo-gold-dark/50'
-                }`}
-              >
-                {page.title}
-              </button>
-            ))}
-          </div>
-        </div>
+            <div>
+              <label className="block text-sm text-lgo-gold-dark mb-2">Page</label>
+              <div className="flex flex-col gap-2">
+                {pages.map(page => (
+                  <button
+                    key={page.id}
+                    type="button"
+                    onClick={() => setPage(String(page.id))}
+                    className={`text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
+                      form.page_id === String(page.id)
+                        ? 'bg-lgo-gold-dark text-lgo-bg border-lgo-gold-dark'
+                        : 'bg-lgo-bg border-lgo-border text-lgo-gold-light hover:border-lgo-gold-dark/50'
+                    }`}
+                  >
+                    {page.title}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="flex gap-3">
-          <button type="submit" className="px-4 py-2 rounded-lg bg-lgo-gold-dark text-lgo-bg font-semibold text-sm">Créer</button>
-        </div>
-      </form>
+            <div className="flex gap-2 pt-2 border-t border-lgo-border/50">
+              <button type="submit" className="px-4 py-2 rounded-lg bg-lgo-gold-dark text-lgo-bg font-semibold text-sm">Créer</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-lg border border-lgo-border text-lgo-gold-light text-sm">Annuler</button>
+            </div>
+          </form>
+        </EditModal>
+      )}
 
       <div className="space-y-2">
         <h4 className="font-serif text-md text-lgo-gold-light">Cocktails existants</h4>
